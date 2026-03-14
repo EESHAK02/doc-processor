@@ -4,6 +4,13 @@ A production-grade agentic document processing system built with **LangGraph**, 
 
 ---
 
+## Live Demo
+
+> URL: [Chat with my agent here](https://doc-processor-x2dd.onrender.com)
+- Note : No login required, may take a minute to wake up (Render free tier limits on inactivity)
+
+---
+
 ## Langfuse Observability
 
 Every document processing run and chat message is traced in your Langfuse dashboard:
