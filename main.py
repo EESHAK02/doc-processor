@@ -394,13 +394,9 @@ def build_ui():
 # Mount Gradio on FastAPI and launch
 
 demo = build_ui()
-demo.launch(
-    server_name="127.0.0.1",
-    server_port=7860,
-    share=False # set to true for public link (expires in a week)
-)
+app = gr.mount_gradio_app(app, demo, path="/")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 7860))
-    host = "0.0.0.0" if os.environ.get("RENDER") else "127.0.0.1"
-    uvicorn.run("main:app", host=host, port=port, reload=False)
+    print(f"Starting on 0.0.0.0:{port}", flush=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
