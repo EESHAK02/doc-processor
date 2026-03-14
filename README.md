@@ -44,7 +44,7 @@ After uploading documents:
 
 ### 1. Clone & install
 ```bash
-git clone <repo-url>
+git clone https://github.com/EESHAK02/doc-processor
 cd doc-agent
 pip install -r requirements.txt
 ```

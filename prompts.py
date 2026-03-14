@@ -174,11 +174,14 @@ CHAT_PROMPT = """You are a helpful document analysis assistant. You have process
 
 {documents_context}
 
-Answer the user's question accurately and concisely based only on the document data above.
-- For per-document questions, cite which document you're referring to by filename.
-- For cross-document questions, compare and synthesize across all documents.
+Conversation so far:
+{history}
+
+Answer the user's question accurately based on the documents and conversation history above.
+- For per-document questions, cite the filename.
+- For cross-document questions, compare across all documents.
+- If a question refers to something mentioned earlier in the conversation (e.g. 'tell me more about that', 'the first one'), use the conversation history to resolve it.
 - If the answer cannot be found in the documents, say so clearly.
-- Keep responses concise and business-focused.
 
 User question: {question}
 """

@@ -205,6 +205,7 @@ def respond_node(state: dict) -> dict:
     llm = _get_llm()
     question = state.get("question", "")
     documents = state.get("documents", [])
+    chat_history = state.get("chat_history", []) 
 
     # Build rich context string for each document
     context_parts = []
@@ -234,9 +235,16 @@ def respond_node(state: dict) -> dict:
 
     documents_context = "\n\n".join(context_parts)
 
+    # Build history string from last 10 messages (5 turns)
+    history_text = ""
+    for msg in chat_history[-10:]:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        history_text += f"{role}: {msg['content']}\n"
+
     try:
         prompt = CHAT_PROMPT.format(
             documents_context=documents_context,
+            history=history_text,
             question=question,
         )
         response = llm.invoke([HumanMessage(content=prompt)])

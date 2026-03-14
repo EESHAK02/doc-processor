@@ -125,9 +125,13 @@ def process_documents(files, session_state: dict):
 
 def chat(message: str, history: list, session_state: dict):
     if not session_state.get("documents"):
-        return history + [{"role": "user", "content": message}, {"role": "assistant", "content": "⚠️ Please upload and process documents first before asking questions."}], session_state
+        return history + [{"role": "user", "content": message},
+                          {"role": "assistant", "content": "⚠️ Please upload and process documents first."}], session_state
 
     session_id = session_state.get("session_id", "anonymous")
+
+    # get or initialize chat history
+    chat_history = session_state.get("chat_history", [])
 
     trace = None
     try:
@@ -143,11 +147,18 @@ def chat(message: str, history: list, session_state: dict):
         file_paths=session_state.get("file_paths", []),
         question=message,
         trace=trace,
+        chat_history=chat_history,
     )
 
     answer = result.get("answer", "I could not generate an answer.")
-    return history + [{"role": "user", "content": message}, {"role": "assistant", "content": answer}], session_state
 
+    # history
+    chat_history.append({"role": "user", "content": message})
+    chat_history.append({"role": "assistant", "content": answer})
+    session_state["chat_history"] = chat_history   # ← persist it
+
+    return history + [{"role": "user", "content": message},
+                      {"role": "assistant", "content": answer}], session_state
 
 # Gradio UI with custom styling 
 
