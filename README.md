@@ -45,13 +45,13 @@ After uploading documents:
 ### 1. Clone & install
 ```bash
 git clone https://github.com/EESHAK02/doc-processor
-cd doc-agent
+cd doc-processor
 pip install -r requirements.txt
 ```
 
 ### 2. Set environment variables
 ```bash
-cp .env.example .env
+cp .env .env
 # Edit .env with your keys
 ```
 
