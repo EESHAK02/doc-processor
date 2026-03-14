@@ -1,4 +1,4 @@
-# DocAgent — Intelligent Multi-Document Processor
+# DocAgent - Intelligent Multi-Document Processor
 
 A production-grade agentic document processing system built with **LangGraph**, **Groq Llama 3.3 70B**, and **Langfuse** observability. Upload invoices, expense reports, or booking confirmations, or even your resume - the agent classifies, extracts, validates, and lets you chat with your documents.
 
@@ -50,10 +50,8 @@ pip install -r requirements.txt
 ```
 
 ### 2. Set environment variables
-```bash
-cp .env .env
-# Edit .env with your keys
-```
+
+Edit .env with your keys
 
 You need:
 - **Groq API key** - free at https://console.groq.com
