@@ -80,8 +80,12 @@ def process_documents(files, session_state: dict):
         if raw_type == "unknown":
             inferred = doc.get("extracted", {}).get("inferred_type", "Unknown")
             doc_type = f"Unknown (inferred: {inferred})"
+            if doc.get("ocr_used"):
+                lines.append("**OCR used** - scanned PDF detected")
         else:
             doc_type = raw_type.replace("_", " ").title()
+            if doc.get("ocr_used"):
+                lines.append("**OCR used** - scanned PDF detected")
         filename = doc.get("filename", "unknown")
         classification = doc.get("classification", {})
         confidence = classification.get("confidence", 0)

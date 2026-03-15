@@ -8,6 +8,11 @@ from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.messages import HumanMessage, SystemMessage
 import tempfile
+import pytesseract
+import platform
+if platform.system() == "Windows":
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Users\eesha\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+from pdf2image import convert_from_path
 
 from prompts import (
     CLASSIFY_PROMPT,
@@ -40,6 +45,17 @@ def _truncate(text: str, max_chars: int = 6000) -> str:
     # Truncate document text to avoid token limits
     return text[:max_chars] + "\n...[truncated]" if len(text) > max_chars else text
 
+def _ocr_pdf(path: str) -> str:
+    """Convert PDF pages to images and extract text via Tesseract OCR."""
+    try:
+        images = convert_from_path(path, dpi=200)
+        pages_text = []
+        for img in images:
+            text = pytesseract.image_to_string(img)
+            pages_text.append(text)
+        return "\n".join(pages_text)
+    except Exception as e:
+        return ""
 
 # Node 1: load_documents
 
@@ -57,7 +73,14 @@ def load_documents_node(state: dict) -> dict:
             pages = loader.load()
             full_text = "\n".join(p.page_content for p in pages)
             filename = os.path.basename(path)
-            documents.append({"filename": filename, "text": full_text, "path": path})
+
+            ocr_used = False
+            if not full_text.strip():
+                print(f"[OCR] No text found in {filename}, falling back to Tesseract...", flush=True)
+                full_text = _ocr_pdf(path)
+                ocr_used = True
+
+            documents.append({"filename": filename, "text": full_text, "path": path, "ocr_used": ocr_used})
         except Exception as e:
             filename = os.path.basename(path)
             documents.append({
@@ -65,12 +88,14 @@ def load_documents_node(state: dict) -> dict:
                 "text": "",
                 "path": path,
                 "load_error": str(e),
+                "ocr_used": False,
             })
 
     if trace:
         log_span(trace, "load_documents", 
                  {"file_count": len(file_paths)},
-                 {"loaded": len(documents), "filenames": [d["filename"] for d in documents]})
+                 {"loaded": len(documents), 
+                  "ocr_used": [d["filename"] for d in documents if d.get("ocr_used")]})
 
     return {**state, "documents": documents}
 
