@@ -77,7 +77,7 @@ def _ocr_with_vision(path: str) -> str:
 
             client = Groq(api_key=os.environ["GROQ_API_KEY"])
             response = client.chat.completions.create(
-                model="llama-3.2-11b-vision-preview",
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
                 messages=[{
                     "role": "user",
                     "content": [
