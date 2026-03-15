@@ -8,11 +8,14 @@ from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.messages import HumanMessage, SystemMessage
 import tempfile
-import pytesseract
-import platform
-if platform.system() == "Windows":
-    pytesseract.pytesseract.tesseract_cmd = r"C:\Users\eesha\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
+# import pytesseract
+# import platform
+# if platform.system() == "Windows":
+#     pytesseract.pytesseract.tesseract_cmd = r"C:\Users\eesha\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
 from pdf2image import convert_from_path
+import fitz  # pymupdf
+import base64
+from groq import Groq
 
 from prompts import (
     CLASSIFY_PROMPT,
@@ -45,16 +48,60 @@ def _truncate(text: str, max_chars: int = 6000) -> str:
     # Truncate document text to avoid token limits
     return text[:max_chars] + "\n...[truncated]" if len(text) > max_chars else text
 
-def _ocr_pdf(path: str) -> str:
-    """Convert PDF pages to images and extract text via Tesseract OCR."""
+# def _ocr_pdf(path: str) -> str:
+#     """Convert PDF pages to images and extract text via Tesseract OCR."""
+#     try:
+#         images = convert_from_path(path, dpi=200)
+#         pages_text = []
+#         for img in images:
+#             text = pytesseract.image_to_string(img)
+#             pages_text.append(text)
+#         return "\n".join(pages_text)
+#     except Exception as e:
+#         return ""
+def _ocr_with_vision(path: str) -> str:
+    """
+    Render PDF pages as images and extract text using
+    Groq's Llama vision model. No system dependencies needed.
+    """
     try:
-        images = convert_from_path(path, dpi=200)
-        pages_text = []
-        for img in images:
-            text = pytesseract.image_to_string(img)
-            pages_text.append(text)
-        return "\n".join(pages_text)
+        doc = fitz.open(path)
+        all_text = []
+
+        for page_num in range(min(len(doc), 5)):  # cap at 5 pages
+            page = doc[page_num]
+            mat = fitz.Matrix(2, 2)  # 2x zoom ≈ 150 DPI
+            pix = page.get_pixmap(matrix=mat)
+            img_bytes = pix.tobytes("png")
+            img_b64 = base64.b64encode(img_bytes).decode()
+
+            client = Groq(api_key=os.environ["GROQ_API_KEY"])
+            response = client.chat.completions.create(
+                model="llama-3.2-11b-vision-preview",
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{img_b64}"
+                            }
+                        },
+                        {
+                            "type": "text",
+                            "text": "Extract all text from this document image exactly as it appears. Return only the extracted text, no commentary."
+                        }
+                    ]
+                }],
+                max_tokens=2048,
+            )
+            all_text.append(response.choices[0].message.content)
+
+        doc.close()
+        return "\n".join(all_text)
+
     except Exception as e:
+        print(f"[OCR] Vision OCR failed: {e}", flush=True)
         return ""
 
 # Node 1: load_documents
@@ -77,7 +124,7 @@ def load_documents_node(state: dict) -> dict:
             ocr_used = False
             if not full_text.strip():
                 print(f"[OCR] No text found in {filename}, falling back to Tesseract...", flush=True)
-                full_text = _ocr_pdf(path)
+                full_text = _ocr_with_vision(path)
                 ocr_used = True
 
             documents.append({"filename": filename, "text": full_text, "path": path, "ocr_used": ocr_used})
