@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 import uvicorn
 
 from graph import run_processing_pipeline
-from langfuse_config import create_trace
+from langfuse_config import get_or_create_trace
 
 # FASTAPI app (for health checks and potential future API endpoints)
 
@@ -49,22 +49,11 @@ def process_documents(files, session_state: dict):
         shutil.copy(f.name, dest)
         file_paths.append(dest)
 
-    # Create Langfuse trace
-    trace = None
-    try:
-        trace = create_trace(
-            name="doc_processing",
-            user_id=session_id,
-            metadata={"file_count": len(file_paths), "filenames": [os.path.basename(p) for p in file_paths]},
-        )
-    except Exception:
-        pass  # Langfuse optional - avoid breaking the app
-
     # Run graph (no question needed for processing phase)
     result = run_processing_pipeline(
         file_paths=file_paths,
         question="Provide a brief overview of all uploaded documents.",
-        trace=trace,
+        #trace=trace,
     )
 
     documents = result.get("documents", [])
@@ -137,20 +126,10 @@ def chat(message: str, history: list, session_state: dict):
     # get or initialize chat history
     chat_history = session_state.get("chat_history", [])
 
-    trace = None
-    try:
-        trace = create_trace(
-            name="doc_chat",
-            user_id=session_id,
-            metadata={"question": message, "doc_count": len(session_state["documents"])},
-        )
-    except Exception:
-        pass
-
     result = run_processing_pipeline(
         file_paths=session_state.get("file_paths", []),
         question=message,
-        trace=trace,
+        #trace=trace,
         chat_history=chat_history,
     )
 

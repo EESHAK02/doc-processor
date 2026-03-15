@@ -27,7 +27,7 @@ from prompts import (
     VALIDATE_PROMPT_GENERIC,
     CHAT_PROMPT,
 )
-from langfuse_config import log_span, log_llm_call
+from langfuse_config import get_or_create_trace, log_span, log_llm_call
 
 # helpers
 
@@ -48,17 +48,6 @@ def _truncate(text: str, max_chars: int = 6000) -> str:
     # Truncate document text to avoid token limits
     return text[:max_chars] + "\n...[truncated]" if len(text) > max_chars else text
 
-# def _ocr_pdf(path: str) -> str:
-#     """Convert PDF pages to images and extract text via Tesseract OCR."""
-#     try:
-#         images = convert_from_path(path, dpi=200)
-#         pages_text = []
-#         for img in images:
-#             text = pytesseract.image_to_string(img)
-#             pages_text.append(text)
-#         return "\n".join(pages_text)
-#     except Exception as e:
-#         return ""
 def _ocr_with_vision(path: str) -> str:
     """
     Render PDF pages as images and extract text using
@@ -110,7 +99,11 @@ def load_documents_node(state: dict) -> dict:
     # Parse uploaded PDF file paths into raw text.
     # Populates state["documents"] = [{"filename": str, "text": str}]
     
-    trace = state.get("trace")
+    #trace = state.get("trace")
+    trace = get_or_create_trace(
+    session_id=state.get("session_id", "anonymous"),
+    node_name="classify"  # change per node
+    )
     file_paths = state.get("file_paths", [])
     documents = []
 
@@ -154,7 +147,12 @@ def classify_node(state: dict) -> dict:
     # Classify each document as invoice / expense_report / booking_confirmation / unknown and populate
     # doc["doc_type"] and doc["classification"] for each document.
     
-    trace = state.get("trace")
+    #trace = state.get("trace")
+    trace = get_or_create_trace(
+        session_id=state.get("session_id", "anonymous"),
+        node_name="classify"
+    )
+    print(f"[DEBUG] trace in classify_node: {trace}", flush=True)
     llm = _get_llm()
     documents = state.get("documents", [])
 
@@ -190,7 +188,11 @@ EXTRACT_PROMPT_MAP = {
 }
 
 def extract_node(state: dict) -> dict:
-    trace = state.get("trace")
+    #trace = state.get("trace")
+    trace = get_or_create_trace(
+        session_id=state.get("session_id", "anonymous"),
+        node_name="extract"
+    )
     llm = _get_llm()
     documents = state.get("documents", [])
 
@@ -224,7 +226,11 @@ def extract_node(state: dict) -> dict:
 # Node 4: validate_node 
 
 def validate_node(state: dict) -> dict:
-    trace = state.get("trace")
+    #trace = state.get("trace")
+    trace = get_or_create_trace(
+        session_id=state.get("session_id", "anonymous"),
+        node_name="validate"
+    )
     llm = _get_llm()
     documents = state.get("documents", [])
 
@@ -273,7 +279,10 @@ def respond_node(state: dict) -> dict:
     # Answer a chat question based on all processed documents using both per-doc and cross-doc context
     # Populates state["answer"]
 
-    trace = state.get("trace")
+    trace = get_or_create_trace(
+        session_id=state.get("session_id", "anonymous"),
+        node_name="respond"
+    )
     llm = _get_llm()
     question = state.get("question", "")
     documents = state.get("documents", [])

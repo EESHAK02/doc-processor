@@ -19,7 +19,7 @@ class DocAgentState(TypedDict, total=False):
     documents: List[dict]          # populated by load, classify, extract, validate
     question: str                  # chat question from user
     answer: str                    # final answer from respond_node
-    trace: Optional[Any]           # Langfuse trace object (not serialized)
+    #trace: Optional[Any]           # Langfuse trace object (not serialized)
     chat_history: List[dict] 
 
 
@@ -46,7 +46,7 @@ def build_graph():
 
 # convenience runner
 
-def run_processing_pipeline(file_paths: list, question: str, trace=None, chat_history: list = None) -> dict:
+def run_processing_pipeline(file_paths: list, question: str, chat_history: list = None) -> dict:
     
     # Run the full graph for document processing + answering a question, returns the final state dict
     
@@ -54,7 +54,7 @@ def run_processing_pipeline(file_paths: list, question: str, trace=None, chat_hi
     initial_state = {
         "file_paths": file_paths,
         "question": question,
-        "trace": trace,
+        #"trace": trace,
         "chat_history": chat_history or [], 
     }
     result = app.invoke(initial_state)
