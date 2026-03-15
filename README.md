@@ -19,8 +19,6 @@ Every document processing run and chat message is traced in your Langfuse dashbo
 - Per-user session tracking
 - Anomaly rates and risk distributions
 
-Go to https://cloud.langfuse.com to view your traces.
-
 ---
 
 ## Example Questions
